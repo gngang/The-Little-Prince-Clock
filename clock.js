@@ -59,20 +59,33 @@
     bdaysEl.textContent = count;
   }
 
-  function init() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) birthdayInput.value = saved;
+  function safeGet(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function safeSet(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) { /* storage blocked in some embeds — ignore */ }
+  }
 
-    birthdayInput.addEventListener("change", () => {
-      localStorage.setItem(STORAGE_KEY, birthdayInput.value);
+  function init() {
+    const params = new URLSearchParams(window.location.search);
+    const urlBirthday = params.get("birthday");
+    const saved = safeGet(STORAGE_KEY);
+
+    if (urlBirthday && parseBirthday(urlBirthday)) {
+      birthdayInput.value = urlBirthday;
+      safeSet(STORAGE_KEY, urlBirthday);
+    } else if (saved) {
+      birthdayInput.value = saved;
+    }
+
+    // "input" fires immediately on pick/type — "change" alone can wait for blur
+    birthdayInput.addEventListener("input", () => {
+      safeSet(STORAGE_KEY, birthdayInput.value);
       render();
     });
 
     render();
   }
-
-  document.addEventListener("DOMContentLoaded", init);
-})();
 
   document.addEventListener("DOMContentLoaded", init);
 })();
